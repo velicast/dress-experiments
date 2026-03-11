@@ -1,0 +1,20 @@
+('a', frozenset()) 0
+('b', frozenset()) 1
+('b', frozenset({'x', 'c'})) 2
+('c', frozenset()) 3
+('c', frozenset({'x', 'b'})) 4
+('x', frozenset()) 5
+('x', frozenset({'b', 'c'})) 6
+('a', frozenset({'x', 'c'})) 7
+('c', frozenset({'x', 'a'})) 8
+('x', frozenset({'a', 'c'})) 9
+('c', frozenset({'a', 'b'})) 10
+('x', frozenset({'a', 'b'})) 11
+('a', frozenset({'x', 'b'})) 12
+('b', frozenset({'x', 'a'})) 13
+('b', frozenset({'a', 'c'})) 14
+('a', frozenset({'b', 'c'})) 15
+('x', frozenset({'b'})) 16
+('x', frozenset({'c'})) 17
+('x', frozenset({'a'})) 18
+('x', frozenset({'a', 'b', 'c'})) 19

@@ -1,0 +1,52 @@
+('b', frozenset()) 0
+('e', frozenset()) 1
+('e', frozenset({'k', 'g'})) 2
+('f', frozenset()) 3
+('f', frozenset({'l', 'i'})) 4
+('x', frozenset()) 5
+('x', frozenset({'d', 'c'})) 6
+('b', frozenset({'x', 'f'})) 7
+('g', frozenset()) 8
+('g', frozenset({'h', 'c'})) 9
+('k', frozenset()) 10
+('k', frozenset({'h', 'l'})) 11
+('g', frozenset({'e', 'c'})) 12
+('g', frozenset({'h', 'e'})) 13
+('k', frozenset({'h', 'e'})) 14
+('k', frozenset({'l', 'e'})) 15
+('b', frozenset({'x', 'e'})) 16
+('i', frozenset()) 17
+('i', frozenset({'j', 'd'})) 18
+('l', frozenset()) 19
+('l', frozenset({'j', 'k'})) 20
+('i', frozenset({'d', 'f'})) 21
+('i', frozenset({'j', 'f'})) 22
+('l', frozenset({'j', 'f'})) 23
+('l', frozenset({'k', 'f'})) 24
+('b', frozenset({'f', 'e'})) 25
+('c', frozenset()) 26
+('c', frozenset({'h', 'g'})) 27
+('d', frozenset()) 28
+('d', frozenset({'j', 'i'})) 29
+('c', frozenset({'x', 'g'})) 30
+('c', frozenset({'h', 'x'})) 31
+('d', frozenset({'x', 'i'})) 32
+('d', frozenset({'x', 'j'})) 33
+('e', frozenset({'g', 'b'})) 34
+('e', frozenset({'k', 'b'})) 35
+('x', frozenset({'b', 'c'})) 36
+('x', frozenset({'d', 'b'})) 37
+('f', frozenset({'b', 'i'})) 38
+('f', frozenset({'l', 'b'})) 39
+('h', frozenset()) 40
+('h', frozenset({'k', 'g'})) 41
+('h', frozenset({'k', 'c'})) 42
+('h', frozenset({'g', 'c'})) 43
+('j', frozenset()) 44
+('j', frozenset({'l', 'i'})) 45
+('j', frozenset({'d', 'l'})) 46
+('j', frozenset({'d', 'i'})) 47
+('x', frozenset({'c'})) 48
+('x', frozenset({'d'})) 49
+('x', frozenset({'b'})) 50
+('x', frozenset({'d', 'b', 'c'})) 51

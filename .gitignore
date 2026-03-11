@@ -1,0 +1,14 @@
+# Result archives (upload via GitHub Releases instead)
+results/**/*.tar.gz
+*.tar.gz
+
+# Raw experiment outputs
+*.npz
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Checkpoints
+*.checkpoint.json

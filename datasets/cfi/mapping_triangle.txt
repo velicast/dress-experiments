@@ -1,0 +1,8 @@
+('x', frozenset()) 0
+('y', frozenset()) 1
+('z', frozenset()) 2
+('x', frozenset({'z', 'y'})) 3
+('y', frozenset({'x', 'z'})) 4
+('z', frozenset({'x', 'y'})) 5
+('x', frozenset({'y'})) 6
+('x', frozenset({'z'})) 7

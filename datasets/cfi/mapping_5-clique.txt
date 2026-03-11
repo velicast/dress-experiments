@@ -1,0 +1,48 @@
+('a', frozenset()) 0
+('b', frozenset()) 1
+('b', frozenset({'x', 'c'})) 2
+('b', frozenset({'x', 'd'})) 3
+('b', frozenset({'d', 'c'})) 4
+('c', frozenset()) 5
+('c', frozenset({'x', 'b'})) 6
+('c', frozenset({'x', 'd'})) 7
+('c', frozenset({'d', 'b'})) 8
+('d', frozenset()) 9
+('d', frozenset({'x', 'b'})) 10
+('d', frozenset({'x', 'c'})) 11
+('d', frozenset({'b', 'c'})) 12
+('x', frozenset()) 13
+('x', frozenset({'b', 'c'})) 14
+('x', frozenset({'d', 'b'})) 15
+('x', frozenset({'d', 'c'})) 16
+('a', frozenset({'x', 'c'})) 17
+('a', frozenset({'x', 'd'})) 18
+('a', frozenset({'d', 'c'})) 19
+('c', frozenset({'x', 'a'})) 20
+('c', frozenset({'d', 'a'})) 21
+('d', frozenset({'x', 'a'})) 22
+('d', frozenset({'a', 'c'})) 23
+('x', frozenset({'a', 'c'})) 24
+('x', frozenset({'d', 'a'})) 25
+('c', frozenset({'a', 'b'})) 26
+('c', frozenset({'x', 'd', 'a', 'b'})) 27
+('x', frozenset({'a', 'b'})) 28
+('x', frozenset({'d', 'a', 'b', 'c'})) 29
+('d', frozenset({'a', 'b'})) 30
+('d', frozenset({'x', 'a', 'b', 'c'})) 31
+('a', frozenset({'x', 'b'})) 32
+('a', frozenset({'d', 'b'})) 33
+('b', frozenset({'x', 'a'})) 34
+('b', frozenset({'d', 'a'})) 35
+('b', frozenset({'a', 'c'})) 36
+('b', frozenset({'x', 'd', 'a', 'c'})) 37
+('a', frozenset({'b', 'c'})) 38
+('a', frozenset({'x', 'd', 'b', 'c'})) 39
+('x', frozenset({'b'})) 40
+('x', frozenset({'c'})) 41
+('x', frozenset({'d'})) 42
+('x', frozenset({'d', 'b', 'c'})) 43
+('x', frozenset({'a'})) 44
+('x', frozenset({'d', 'a', 'c'})) 45
+('x', frozenset({'a', 'b', 'c'})) 46
+('x', frozenset({'d', 'a', 'b'})) 47
