@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
-"""ogbl-vessel link prediction using DRESS edge values as the predictor.
+"""ogbl-vessel link prediction using inv-log-length DRESS edge values.
 
-The idea: compute DRESS on the training graph with node weights derived
-from (x,y,z) spatial coordinates.  For each candidate edge (u,v), the
-DRESS value IS the link prediction score — no model, no training.
-
-Node features: 3D coordinates (x, y, z).  We map to a single scalar via
-a linear combination with irrational coefficients to make each coordinate
-unique:  w(v) = x + sqrt(2)*y + sqrt(3)*z, then normalize.
+The idea: compute DRESS on the undirected training graph with edge weights
+derived from inverse-log endpoint-to-endpoint coordinate distance. For each
+candidate edge (u,v), the same transformed distance is passed as the virtual
+edge weight to get(u, v, edge_weight=...).
 
 Metric: ROC-AUC (official OGB evaluator).
 
 Usage:
+    pip install dress-graph
     python ogbl_vessel_dress.py
 """
 
@@ -21,10 +19,63 @@ import numpy as np
 # OGB torch.load compat
 import torch
 _orig_torch_load = torch.load
-torch.load = lambda *a, **kw: _orig_torch_load(*a, **{**kw, 'weights_only': False})
+torch.load = lambda *a, **kw: _orig_torch_load(*a, **{**kw, "weights_only": False})
 
 from ogb.linkproppred import LinkPropPredDataset, Evaluator
 from dress import DRESS
+
+
+def endpoint_distances(coords, sources, targets):
+    source_index = np.asarray(sources, dtype=np.int64)
+    target_index = np.asarray(targets, dtype=np.int64)
+    return np.linalg.norm(coords[source_index] - coords[target_index], axis=1)
+
+
+def inv_log_length_scale(lengths):
+    log_lengths = np.log1p(lengths)
+    positive_logs = log_lengths[lengths > 0.0]
+    log_scale = float(np.median(positive_logs)) if positive_logs.size else 1.0
+    return max(log_scale, 1e-12)
+
+
+def inv_log_length_weights(lengths, log_scale):
+    weights = log_scale / np.maximum(np.log1p(lengths), 1e-12)
+    return np.clip(weights, 1e-6, 1e6)
+
+
+def build_dress_edge_weights(coords, sources, targets):
+    lengths = endpoint_distances(coords, sources, targets)
+    log_scale = inv_log_length_scale(lengths)
+    edge_weights = inv_log_length_weights(lengths, log_scale)
+    print(f"  Edge lengths: min={lengths.min():.4f} max={lengths.max():.4f} "
+          f"median={np.median(lengths):.4f} mean={lengths.mean():.4f}")
+    print(f"  inv-log-length scale: {log_scale:.6f}")
+    return edge_weights, log_scale
+
+
+def virtual_edge_weights(coords, candidate_edges, log_scale):
+    lengths = endpoint_distances(coords, candidate_edges[:, 0], candidate_edges[:, 1])
+    return inv_log_length_weights(lengths, log_scale)
+
+
+def score_candidate_edges(dg, coords, candidate_edges, log_scale):
+    query_weights = virtual_edge_weights(coords, candidate_edges, log_scale)
+    return np.array([
+        dg.get(
+            int(candidate_edges[i, 0]),
+            int(candidate_edges[i, 1]),
+            edge_weight=float(query_weights[i]),
+        )
+        for i in range(candidate_edges.shape[0])
+    ], dtype=np.float64)
+
+
+def print_weight_stats(name, values):
+    if values is None:
+        print(f"  {name}: unit")
+        return
+    print(f"  {name}: min={values.min():.4f} max={values.max():.4f} "
+          f"median={np.median(values):.4f} mean={values.mean():.4f}")
 
 
 def main():
@@ -44,14 +95,8 @@ def main():
     print(f"  Training edges (directed): {edge_index.shape[1]:,}")
     print(f"  Node feature shape: {node_feat.shape}")
 
-    # ── Node weights: linear combination with irrational coefficients ──
     coords = node_feat.astype(np.float64)
-    raw_weights = coords[:, 0] + np.sqrt(2) * coords[:, 1] + np.sqrt(3) * coords[:, 2]
-    # Log normalization: compress range while keeping positivity and uniqueness
-    raw_weights = np.log(raw_weights - raw_weights.min() + 2.0)
-
-    print(f"  Node weights: min={raw_weights.min():.4f} max={raw_weights.max():.4f} "
-          f"mean={raw_weights.mean():.4f}")
+    print("  DRESS weight mode: inv-log-length")
 
     # ── Deduplicate to undirected edges ──
     src = edge_index[0]
@@ -62,11 +107,22 @@ def main():
     num_undirected = len(u_src)
     print(f"  Undirected training edges: {num_undirected:,}")
 
+    edge_weights, log_scale = build_dress_edge_weights(coords, u_src, u_tgt)
+    print_weight_stats("Node weights", None)
+    print_weight_stats("Edge weights", edge_weights)
+    print("  Virtual edge weights: candidate get(u, v) uses the same "
+          "inv-log-length transform")
+
     # ── Build DRESS object and fit ──
     # Use CPU DRESS object (needed for get() on virtual edges)
     print(f"\n  Building DRESS graph (n={num_nodes:,}, m={num_undirected:,})...")
     t0 = time.perf_counter()
-    dg = DRESS(num_nodes, u_src, u_tgt, vertex_weights=raw_weights.tolist())
+    dg = DRESS(
+        num_nodes,
+        u_src,
+        u_tgt,
+        weights=edge_weights.tolist(),
+    )
     dt_build = time.perf_counter() - t0
     print(f"  Built in {dt_build:.1f}s")
 
@@ -80,7 +136,7 @@ def main():
     print(f"  DRESS values: min={edge_vals.min():.6f} max={edge_vals.max():.6f} "
           f"unique={len(np.unique(np.round(edge_vals, 8))):,}/{len(edge_vals):,}")
 
-    # ── Score edges using get(u, v) ──
+    # ── Score edges using get(u, v), with matching virtual edge weights ──
     evaluator = Evaluator(name="ogbl-vessel")
 
     for split_name in ["valid", "test"]:
@@ -93,19 +149,17 @@ def main():
         print(f"\n  Scoring {split_name}: {num_pos:,} pos + {num_neg:,} neg edges...")
 
         t0 = time.perf_counter()
-        pos_scores = np.array([
-            dg.get(int(pos_edge[i, 0]), int(pos_edge[i, 1]))
-            for i in range(num_pos)
-        ], dtype=np.float64)
+        pos_scores = score_candidate_edges(
+            dg, coords, pos_edge, log_scale
+        )
         dt_pos = time.perf_counter() - t0
         print(f"    Pos scores in {dt_pos:.1f}s  "
               f"(min={pos_scores.min():.6f} max={pos_scores.max():.6f} mean={pos_scores.mean():.6f})")
 
         t0 = time.perf_counter()
-        neg_scores = np.array([
-            dg.get(int(neg_edge[i, 0]), int(neg_edge[i, 1]))
-            for i in range(num_neg)
-        ], dtype=np.float64)
+        neg_scores = score_candidate_edges(
+            dg, coords, neg_edge, log_scale
+        )
         dt_neg = time.perf_counter() - t0
         print(f"    Neg scores in {dt_neg:.1f}s  "
               f"(min={neg_scores.min():.6f} max={neg_scores.max():.6f} mean={neg_scores.mean():.6f})")
